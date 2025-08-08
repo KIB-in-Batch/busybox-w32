@@ -1,0 +1,39 @@
+# Build and Deploy BusyBox-W32
+
+# Define permissions
+
+name: build-and-deploy
+permissions:
+  contents: write
+
+on:
+  # Run on every tag publish
+  release:
+    types: [published]
+
+jobs:
+  build-and-deploy:
+    runs-on: fedora-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build BusyBox-W32
+        run: |
+          sudo dnf install gcc make ncurses-devel perl-Pod-Html mingw64-gcc mingw32-gcc
+          # Build BusyBox-W32
+          make mingw64_defconfig # Build for 64-bit Windows
+          make -j$(nproc)
+          mkdir -p build
+          mv ./busybox.exe build/busybox64.exe
+          make mingw32_defconfig # Build for 32-bit Windows
+          make -j$(nproc)
+          mv ./busybox.exe build/busybox32.exe
+      
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: | 
+            build/busybox64.exe
+            build/busybox32.exe
