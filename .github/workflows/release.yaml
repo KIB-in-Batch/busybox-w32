@@ -1,0 +1,41 @@
+name: build-and-deploy
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: '0 */5 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make libncurses5-dev perl mingw-w64
+      
+      - name: Build BusyBox-W32
+        run: |
+          make mingw64_defconfig
+          make -j$(nproc)
+          mkdir -p build
+          mv ./busybox.exe build/busybox64.exe
+          make mingw32_defconfig
+          make -j$(nproc)
+          mv ./busybox.exe build/busybox32.exe
+      
+      - name: Create release with timestamp name
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: "release-$(date -u +'%Y%m%dT%H%M%SZ')"
+          name: "Release $(date -u +'%Y-%m-%d %H:%M UTC')"
+          files: |
+            build/busybox64.exe
+            build/busybox32.exe
