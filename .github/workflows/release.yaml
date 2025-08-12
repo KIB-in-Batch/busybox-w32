@@ -19,7 +19,7 @@ jobs:
           sudo apt-get install -y gcc make libncurses5-dev perl mingw-w64
       - name: Build BusyBox-W32
         run: |
-          make mingw64_defconfig
+          make mingw64u_defconfig
           make -j$(nproc)
           mkdir -p build
           mv ./busybox.exe build/busybox64.exe
