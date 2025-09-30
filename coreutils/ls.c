@@ -98,6 +98,7 @@
 
 //usage:#define ls_trivial_usage
 //usage:	"[-1AaCxd"
+//usage:	IF_PLATFORM_MINGW32("g")
 //usage:	IF_FEATURE_LS_FOLLOWLINKS("LH")
 //usage:	IF_FEATURE_LS_RECURSIVE("R")
 //usage:	IF_FEATURE_LS_FILETYPES("Fp") "lins"
@@ -113,6 +114,7 @@
 //usage:     "\n	-A	Like -a, but exclude . and .."
 //usage:	IF_PLATFORM_MINGW32(
 //usage:     "\n	-aa,-AA	Like -a,-A but omit hidden system files"
+//usage:     "\n	-C	List by columns"
 //usage:	)
 ////usage:     "\n	-C	List by columns" - don't show, this is a default anyway
 //usage:     "\n	-x	List by lines"
@@ -129,6 +131,11 @@
 //usage:     "\n	-F	Append indicator (one of */=@|) to names"
 //usage:	)
 //usage:     "\n	-l	Long format"
+//usage:	IF_PLATFORM_MINGW32(
+//usage:     "\n	-g	Long format without group column"
+//usage:	)
+////usage:     "\n	-g	Long format without group column"
+////TODO: support -G too ("suppress owner column", GNUism)
 //usage:     "\n	-i	List inode numbers"
 //usage:     "\n	-n	List numeric UIDs and GIDs instead of names"
 //usage:     "\n	-s	List allocated blocks"
@@ -210,6 +217,7 @@ SPLIT_SUBDIR    = 2,
 /* -T WIDTH Ignored (we don't use tabs on output) */
 /* -Z       SELinux mandated option, busybox optionally supports */
 #define ls_options \
+<<<<<<< HEAD
 	"Cadi1lgnsxAk"       /* 12 opts, total 12 */ \
 	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 14 */ \
 	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 15 */ \
@@ -220,6 +228,31 @@ SPLIT_SUBDIR    = 2,
 	IF_FEATURE_LS_FOLLOWLINKS("LH")  /* 2, 26 */ \
 	IF_FEATURE_HUMAN_READABLE("h")   /* 1, 27 */ \
 	IF_FEATURE_LS_WIDTH("T:w:")      /* 2, 29 */
+=======
+	"Cadi1lgnsxA"        /* 11 opts, total 11 */ \
+	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 13 */ \
+	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 14 */ \
+	IF_SELINUX("Z")                  /* 1, 15 */ \
+	"Q"                              /* 1, 16 */ \
+	IF_FEATURE_LS_TIMESTAMPS("ctu")  /* 3, 19 */ \
+	IF_FEATURE_LS_SORTFILES("SXrv")  /* 4, 23 */ \
+	IF_FEATURE_LS_FOLLOWLINKS("LH")  /* 2, 25 */ \
+	IF_FEATURE_HUMAN_READABLE("h")   /* 1, 26 */ \
+	IF_FEATURE_LS_WIDTH("T:w:")      /* 2, 28 */ \
+	IF_LONG_OPTS("\xff")             /* 1, 29 */ \
+	IF_LONG_OPTS("\xfe")             /* 1, 30 */ \
+IF_PLATFORM_MINGW32(IF_LONG_OPTS("\xfd:"))    /* 1, 31 */ \
+IF_NOT_PLATFORM_MINGW32(IF_LONG_OPTS("\xfd")) \
+	"qk"                             /* 2, 33 */
+
+#if ENABLE_LONG_OPTS
+static const char ls_longopts[] ALIGN1 =
+	"full-time\0" No_argument "\xff"
+	"group-directories-first\0" No_argument "\xfe"
+	IF_FEATURE_LS_COLOR("color\0" Optional_argument "\xfd")
+;
+#endif
+>>>>>>> upstream/master
 
 enum {
 	OPT_C = (1 << 0),
