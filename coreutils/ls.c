@@ -217,18 +217,6 @@ SPLIT_SUBDIR    = 2,
 /* -T WIDTH Ignored (we don't use tabs on output) */
 /* -Z       SELinux mandated option, busybox optionally supports */
 #define ls_options \
-<<<<<<< HEAD
-	"Cadi1lgnsxAk"       /* 12 opts, total 12 */ \
-	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 14 */ \
-	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 15 */ \
-	IF_SELINUX("Z")                  /* 1, 16 */ \
-	"Q"                              /* 1, 17 */ \
-	IF_FEATURE_LS_TIMESTAMPS("ctu")  /* 3, 20 */ \
-	IF_FEATURE_LS_SORTFILES("SXrv")  /* 4, 24 */ \
-	IF_FEATURE_LS_FOLLOWLINKS("LH")  /* 2, 26 */ \
-	IF_FEATURE_HUMAN_READABLE("h")   /* 1, 27 */ \
-	IF_FEATURE_LS_WIDTH("T:w:")      /* 2, 29 */
-=======
 	"Cadi1lgnsxA"        /* 11 opts, total 11 */ \
 	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 13 */ \
 	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 14 */ \
@@ -252,7 +240,6 @@ static const char ls_longopts[] ALIGN1 =
 	IF_FEATURE_LS_COLOR("color\0" Optional_argument "\xfd")
 ;
 #endif
->>>>>>> upstream/master
 
 enum {
 	OPT_C = (1 << 0),
