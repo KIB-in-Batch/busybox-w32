@@ -3,7 +3,7 @@
 #define IMPL(name,ret,retval,...) static inline ret name(__VA_ARGS__) { return retval; }
 
 /* Use 64-bit time on 32-bit platforms. */
-#if !defined(_WIN64)
+#if !defined(_WIN64) && __MINGW64_VERSION_MAJOR >= 10
 # define time_t __time64_t
 # define ctime(t) _ctime64(t)
 # define localtime(t) _localtime64(t)
@@ -253,6 +253,17 @@ int ffs(int i);
 #else
 # define ffs(i) __builtin_ffs(i)
 #endif
+
+/*
+ * sys/file.h
+ */
+
+int flock(int fd, int op);
+
+#define LOCK_SH 1
+#define LOCK_EX 2
+#define LOCK_UN 8
+#define LOCK_NB 4
 
 /*
  * sys/ioctl.h
@@ -640,7 +651,6 @@ int err_win_to_posix(void);
 ULONGLONG CompatGetTickCount64(void);
 #define GetTickCount64 CompatGetTickCount64
 
-ssize_t get_random_bytes(void *buf, ssize_t count);
 int enumerate_links(const char *file, char *name);
 
 int unc_root_len(const char *dir) FAST_FUNC;

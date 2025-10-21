@@ -661,6 +661,8 @@ struct globals_misc {
 #if !ENABLE_PLATFORM_MINGW32
 	volatile /*sig_atomic_t*/ smallint gotsigchld;  /* 1 = got SIGCHLD */
 	volatile /*sig_atomic_t*/ smallint pending_sig;	/* last pending signal */
+#else
+	volatile /*sig_atomic_t*/ smallint waitcmd_int;	/* SIGINT in wait */
 #endif
 	smallint exception_type; /* kind of exception: */
 #define EXINT 0         /* SIGINT received */
@@ -780,6 +782,9 @@ extern struct globals_misc *BB_GLOBAL_CONST ash_ptr_to_globals_misc;
 #define exception_type    (G_misc.exception_type   )
 #define suppress_int      (G_misc.suppress_int     )
 #define pending_int       (G_misc.pending_int      )
+#if ENABLE_PLATFORM_MINGW32
+#define waitcmd_int       (G_misc.waitcmd_int      )
+#endif
 #define gotsigchld        (G_misc.gotsigchld       )
 #define pending_sig       (G_misc.pending_sig      )
 #define nullstr     (G_misc.nullstr    )
@@ -930,6 +935,14 @@ raise_exception(int e)
 } while (0)
 #endif
 
+#if ENABLE_PLATFORM_MINGW32
+static void
+write_ctrl_c(void)
+{
+	console_write("^C", 2);
+}
+#endif
+
 /*
  * Called when a SIGINT is received.  (If the user specifies
  * that SIGINT is to be trapped or ignored using the trap builtin, then
@@ -937,17 +950,10 @@ raise_exception(int e)
  * are held using the INTOFF macro.  (The test for iflag is just
  * defensive programming.)
  */
-static void raise_interrupt(void) IF_NOT_PLATFORM_MINGW32(NORETURN);
+static void raise_interrupt(void) NORETURN;
 static void
 raise_interrupt(void)
 {
-#if ENABLE_PLATFORM_MINGW32
-	/* Contrary to the comment above on Windows raise_interrupt() is
-	 * called when SIGINT is trapped or ignored.  We detect this here
-	 * and return without doing anything. */
-	if (trap[SIGINT])
-		return;
-#endif
 	pending_int = 0;
 #if !ENABLE_PLATFORM_MINGW32
 	/* Signal is not automatically unmasked after it is raised,
@@ -969,7 +975,7 @@ raise_interrupt(void)
 	}
 #if ENABLE_PLATFORM_MINGW32
 	if (iflag)
-		write(STDOUT_FILENO, "^C", 2);
+		write_ctrl_c();
 #endif
 	/* bash: ^C even on empty command line sets $? */
 	exitstatus = SIGINT + 128;
@@ -5038,9 +5044,12 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
 # if ENABLE_FEATURE_EDITING
 		bb_got_signal = SIGINT; /* for read_line_input: "we got a signal" */
 # endif
-		if (!suppress_int && !(rootshell && iflag))
-			raise_interrupt();
-		pending_int = 1;
+		waitcmd_int = -waitcmd_int;
+		if (!trap[SIGINT]) {
+			if (!suppress_int && !(rootshell && iflag))
+				raise_interrupt();
+			pending_int = 1;
+		}
 		return TRUE;
 	}
 	return FALSE;
@@ -5051,7 +5060,7 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
  * They don't support waitpid(-1)
  */
 static pid_t
-waitpid_child(int *status, int wait_flags)
+waitpid_child(int *status, DWORD blocking)
 {
 	struct job *jb;
 	int pid_nr = 0;
@@ -5077,17 +5086,18 @@ waitpid_child(int *status, int wait_flags)
 	}
 
 	if (pid_nr) {
-		idx = WaitForMultipleObjects(pid_nr, proclist, FALSE,
-					wait_flags & WNOHANG ? 0 : INFINITE);
-		if (idx < pid_nr) {
-			GetExitCodeProcess(proclist[idx], &win_status);
-			*status = exit_code_to_wait_status(win_status);
-			pid = GetProcessId(proclist[idx]);
-		}
+		do {
+			idx = WaitForMultipleObjects(pid_nr, proclist, FALSE, blocking);
+			if (idx < pid_nr) {
+				GetExitCodeProcess(proclist[idx], &win_status);
+				*status = exit_code_to_wait_status(win_status);
+				pid = GetProcessId(proclist[idx]);
+				break;
+			}
+		} while (blocking && !pending_int && waitcmd_int != 1);
 	}
 	return pid;
 }
-#define waitpid(p, s, f) waitpid_child(s, f)
 #endif
 
 /* Inside dowait(): */
@@ -5142,9 +5152,9 @@ waitproc(int block, int *status)
 
 	return err;
 #else
-	int flags = block == DOWAIT_BLOCK ? 0 : WNOHANG;
+	// Only DOWAIT_NONBLOCK is non-blocking, other values block.
 	*status = 0;
-	return waitpid(-1, status, flags);
+	return waitpid_child(status, block != DOWAIT_NONBLOCK);
 #endif
 }
 
@@ -5288,7 +5298,7 @@ static int dowait(int block, struct job *jp)
 #else
 	int pid = 1;
 
-	while (jp ? jp->state == JOBRUNNING : pid > 0)
+	while ((jp ? jp->state == JOBRUNNING : pid > 0) && waitcmd_int != 1)
 		pid = waitone(block, jp);
 
 	return pid;
@@ -5501,6 +5511,9 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 	 * with an exit status greater than 128, immediately after which
 	 * the trap is executed."
 	 */
+#if ENABLE_PLATFORM_MINGW32
+			waitcmd_int = -1;
+#endif
 #if BASH_WAIT_N
 			status = dowait(DOWAIT_CHILD_OR_SIG | DOWAIT_JOBSTATUS, NULL);
 #else
@@ -5510,8 +5523,16 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 			 * dowait() returns pid > 0. Check this case,
 			 * not "if (dowait() < 0)"!
 			 */
+#if ENABLE_PLATFORM_MINGW32
+			if (waitcmd_int == 1) {
+				write_ctrl_c();
+				return 128 | SIGINT;
+			}
+			waitcmd_int = 0;
+#else
 			if (pending_sig)
 				goto sigout;
+#endif
 #if BASH_WAIT_N
 			if (one) {
 				/* wait -n waits for one _job_, not one _process_.
@@ -10573,8 +10594,10 @@ dotrap(void)
 	int status, last_status;
 	char *p;
 
-	if (!pending_int)
+	if (!pending_int && waitcmd_int != 1) {
+		waitcmd_int = 0;
 		return;
+	}
 
 	status = savestatus;
 	last_status = status;
@@ -10582,7 +10605,7 @@ dotrap(void)
 		status = exitstatus;
 		savestatus = status;
 	}
-	pending_int = 0;
+	pending_int = waitcmd_int = 0;
 	barrier();
 
 	TRACE(("dotrap entered\n"));
@@ -12340,7 +12363,6 @@ preadfd(void)
 			 * is SIG_IGNed on startup, it stays SIG_IGNed)
 			 */
 # else
-			raise_interrupt();
 			write(STDOUT_FILENO, "^C\n", 3);
 # endif
 			if (trap[SIGINT]) {
@@ -12353,6 +12375,10 @@ preadfd(void)
 				buf[1] = '\0';
 				return 1;
 			}
+# if ENABLE_PLATFORM_MINGW32
+			else
+				raise_interrupt();
+# endif
 			exitstatus = 128 + SIGINT;
 			/* bash behavior on ^C + ignored SIGINT: */
 			goto again;
@@ -16015,7 +16041,7 @@ readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 	} else if ((uintptr_t)r == 3) {
 		/* ^C pressed, propagate event */
 		if (trap[SIGINT]) {
-			write(STDOUT_FILENO, "^C", 2);
+			write_ctrl_c();
 			pending_int = 1;
 			dotrap();
 			if (!(rootshell && iflag))
@@ -16364,14 +16390,11 @@ init(void)
  * Process the shell command line arguments.
  */
 static int
-procargs(char **argv)
+procargs(char **xargv)
 {
 	int i;
-	const char *xminusc;
-	char **xargv;
 	int login_sh;
 
-	xargv = argv;
 #if ENABLE_PLATFORM_MINGW32
 	login_sh = applet_name[0] == 'l';
 #else
@@ -16392,9 +16415,8 @@ procargs(char **argv)
 		raise_exception(EXERROR); /* does not return */
 	}
 	xargv = argptr;
-	xminusc = minusc;
 	if (*xargv == NULL) {
-		if (xminusc)
+		if (minusc)
 			ash_msg_and_raise_error(bb_msg_requires_arg, "-c");
 		sflag = 1;
 	}
@@ -16416,7 +16438,7 @@ procargs(char **argv)
 	debug = 1;
 #endif
 	/* POSIX 1003.2: first arg after "-c CMD" is $0, remainder $1... */
-	if (xminusc) {
+	if (minusc) {
 		minusc = *xargv++;
 		if (*xargv)
 			goto setarg0;
