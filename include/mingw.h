@@ -6,7 +6,7 @@
 #if !defined(_WIN64) && __MINGW64_VERSION_MAJOR >= 10
 # define time_t __time64_t
 # define ctime(t) _ctime64(t)
-# define localtime(t) _localtime64(t)
+// localtime is handled in mingw_localtime()
 # define time(t) _time64(t)
 # define gmtime(t) _gmtime64(t)
 # define mktime(t) _mktime64(t)
@@ -328,6 +328,9 @@ time_t timegm(struct tm *tm);
 int nanosleep(const struct timespec *req, struct timespec *rem);
 int clock_gettime(clockid_t clockid, struct timespec *tp);
 int clock_settime(clockid_t clockid, const struct timespec *tp);
+struct tm *mingw_localtime(const time_t *timep);
+
+#define localtime mingw_localtime
 
 /*
  * sys/stat.h
@@ -512,7 +515,7 @@ int kill(pid_t pid, int sig);
 int link(const char *oldpath, const char *newpath);
 NOIMPL(mknod,const char *name UNUSED_PARAM, mode_t mode UNUSED_PARAM, dev_t device UNUSED_PARAM);
 /* order of devices must match that in get_dev_type */
-enum {DEV_NULL, DEV_ZERO, DEV_URANDOM, NOT_DEVICE = -1};
+enum {DEV_NULL, DEV_TTY, DEV_ZERO, DEV_URANDOM, NOT_DEVICE = -1};
 int get_dev_type(const char *filename);
 void update_special_fd(int dev, int fd);
 int mingw_open (const char *filename, int oflags, ...);
