@@ -21,9 +21,6 @@ jobs:
           make -j$(nproc)
           mkdir -p build
           mv ./busybox.exe build/busybox64.exe
-          make mingw32_defconfig
-          make -j$(nproc)
-          mv ./busybox.exe build/busybox32.exe
       - name: Create Git tag
         id: create_tag
         run: |
@@ -40,4 +37,3 @@ jobs:
           tag_name: ${{ steps.create_tag.outputs.tag_name }}
           files: |
             build/busybox64.exe
-            build/busybox32.exe
