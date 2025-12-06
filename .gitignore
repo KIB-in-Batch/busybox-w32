@@ -70,3 +70,4 @@ TAGS
 # release description for tarball
 #
 .frp_describe
+*.old
