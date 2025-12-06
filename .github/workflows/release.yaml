@@ -62,9 +62,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -Path "C:\"
-          Get-Location
-          Write-Host "== Setting KIBROOT to D: =="
           $env:KIBROOT = "D:"
 
-          Write-Host "== Running BusyBox bash test: cd / ; pwd =="
-          .\busybox64.exe bash -c "cd /; pwd"
+          .\busybox64.exe bash -c "export kibroot="D:"; cd /; pwd"
+          .\busybox64.exe bash -c "mkdir test; cd test; pwd"
