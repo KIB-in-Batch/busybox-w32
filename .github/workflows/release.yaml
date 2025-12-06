@@ -61,10 +61,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "== Setting KIBROOT to C: =="
-          $env:KIBROOT = "C:"
-
-          Write-Host "== Switching to D: drive =="
-          Set-Location D:\
+          $env:KIBROOT = "D:"
 
           Write-Host "== Running BusyBox bash test: cd / ; pwd =="
           .\busybox64.exe bash -c "cd /; pwd"
