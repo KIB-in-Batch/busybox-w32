@@ -1,8 +1,12 @@
 name: create-release
+
 permissions:
   contents: write
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
@@ -45,7 +49,6 @@ jobs:
           tag_name: ${{ steps.create_tag.outputs.tag_name }}
           files: build/busybox64.exe
 
-
   test-windows-binary:
     runs-on: windows-latest
     needs: build-and-deploy
@@ -54,15 +57,74 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -Path "C:\"
+          $binaryPath = "C:\busybox64.exe"
           $url = "https://github.com/KIB-in-Batch/busybox-w32/releases/latest/download/busybox64.exe"
-          curl.exe -L# $url -o busybox64.exe
-          .\busybox64.exe echo "Hi"
+          curl.exe -L# $url -o $binaryPath
 
-      - name: Test KIBROOT mapping and cd/pwd
+      - name: Verify basic commands
         shell: pwsh
         run: |
-          Set-Location -Path "C:\"
-          $env:KIBROOT = "D:"
+          $binary = "C:\busybox64.exe"
+          Write-Host "Running basic commands..."
+          & $binary echo "Hello World"
+          & $binary date
+          & $binary uname -a
 
-          .\busybox64.exe bash -c "export kibroot="D:"; cd /; pwd"
-          .\busybox64.exe bash -c "mkdir test; cd test; pwd"
+      - name: Test directory and file operations
+        shell: pwsh
+        run: |
+          $binary = "C:\busybox64.exe"
+          $testDir = "C:\test_busybox"
+          New-Item -ItemType Directory -Path $testDir | Out-Null
+          Set-Location -Path $testDir
+
+          # Create files
+          & $binary touch file1.txt file2.txt
+          & $binary sh -c "echo 'content1' > file1.txt"
+          & $binary sh -c "echo 'content2' > file2.txt"
+
+          # List files
+          $files = & $binary ls
+          Write-Host "Files: $files"
+          if ($files -notmatch "file1.txt" -or $files -notmatch "file2.txt") {
+            throw "Files missing after creation"
+          }
+
+          # Read files
+          $content1 = & $binary cat file1.txt
+          $content2 = & $binary cat file2.txt
+          if ($content1 -ne "content1" -or $content2 -ne "content2") {
+            throw "File contents incorrect"
+          }
+
+      - name: Test copy, move, and remove
+        shell: pwsh
+        run: |
+          $binary = "C:\busybox64.exe"
+          # Copy file1.txt to copy_file1.txt
+          & $binary cp file1.txt copy_file1.txt
+          if (!(Test-Path copy_file1.txt)) { throw "Copy failed" }
+
+          # Move file2.txt to moved_file2.txt
+          & $binary mv file2.txt moved_file2.txt
+          if (!(Test-Path moved_file2.txt) -or (Test-Path file2.txt)) { throw "Move failed" }
+
+          # Remove files
+          & $binary rm copy_file1.txt moved_file2.txt
+          if (Test-Path copy_file1.txt -or Test-Path moved_file2.txt) { throw "Remove failed" }
+
+      - name: Test command chaining and redirection
+        shell: pwsh
+        run: |
+          $binary = "C:\busybox64.exe"
+          & $binary sh -c "echo 'line1' > chain.txt"
+          & $binary sh -c "echo 'line2' >> chain.txt"
+          $lines = & $binary cat chain.txt
+          Write-Host "Chained file content: $lines"
+          if ($lines -notmatch "line1" -or $lines -notmatch "line2") { throw "Command chaining failed" }
+
+      - name: Clean up
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force "C:\test_busybox"
+          Remove-Item -Force "C:\busybox64.exe"
