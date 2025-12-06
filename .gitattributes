@@ -1,1 +1,17 @@
 * text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+testsuite/* binary
+
+*.bz2 binary
+*.gz binary
+*.xz binary
+*.zip binary
+*.tar binary
+*.tar.gz binary
+*.tar.bz2 binary

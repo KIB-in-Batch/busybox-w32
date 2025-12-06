@@ -1,26 +1,33 @@
 name: create-release
 permissions:
   contents: write
+
 on:
   workflow_dispatch:
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.tag_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure all tags are fetched
+          fetch-depth: 0
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc make libncurses5-dev perl mingw-w64
+
       - name: Build BusyBox-W32
         run: |
-          make kib64u_defconfig
+          make kib64u_defconfig -j$(nproc)
           make -j$(nproc)
           mkdir -p build
           mv ./busybox.exe build/busybox64.exe
+
       - name: Create Git tag
         id: create_tag
         run: |
@@ -30,10 +37,34 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.create_tag.outputs.tag_name }}
-          files: |
-            build/busybox64.exe
+          files: build/busybox64.exe
+
+
+  test-windows-binary:
+    runs-on: windows-latest
+    needs: build-and-deploy
+    steps:
+      - name: Download latest busybox64.exe from release
+        shell: pwsh
+        run: |
+          $url = "https://github.com/KIB-in-Batch/busybox-w32/releases/latest/download/busybox64.exe"
+          curl.exe -L# $url -o busybox64.exe
+          .\busybox64.exe echo "Hi"
+
+      - name: Test KIBROOT mapping and cd/pwd
+        shell: pwsh
+        run: |
+          Write-Host "== Setting KIBROOT to C: =="
+          $env:KIBROOT = "C:"
+
+          Write-Host "== Switching to D: drive =="
+          Set-Location D:\
+
+          Write-Host "== Running BusyBox bash test: cd / ; pwd =="
+          .\busybox64.exe bash -c "cd /; pwd"

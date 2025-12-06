@@ -1807,21 +1807,61 @@ int mingw_mkdir(const char *path, int mode UNUSED_PARAM)
 #undef chdir
 int mingw_chdir(const char *dirname)
 {
-	int ret = -1;
-	char *realdir;
+    if (!dirname) {
+        errno = EINVAL;
+        return -1;
+    }
 
-	if (is_symlink(dirname))
-		realdir = xmalloc_realpath(dirname);
-	else
-		realdir = xstrdup(dirname);
+    int ret = -1;
+    char *realdir = NULL;
+    char *allocated_ptr = NULL;
 
-	if (realdir) {
-		fix_path_case(realdir);
-		ret = chdir(realdir);
-	}
-	free(realdir);
+    const char *kibroot = getenv("KIBROOT");
+    if (!kibroot)
+        kibroot = getenv("kibroot");
 
-	return ret;
+    if (dirname[0] == '/' &&
+        kibroot &&
+        isalpha((unsigned char)kibroot[0]) &&
+        kibroot[1] == ':')
+    {
+        size_t len = 2 + strlen(dirname) + 1;
+        allocated_ptr = malloc(len);
+        if (!allocated_ptr) {
+            errno = ENOMEM;
+            return -1;
+        }
+
+        int written = snprintf(allocated_ptr, len, "%c%c%s",
+                               kibroot[0], kibroot[1], dirname);
+        if (written < 0 || (size_t)written >= len) {
+            free(allocated_ptr);
+            errno = EOVERFLOW;
+            return -1;
+        }
+
+        realdir = allocated_ptr;
+    }
+    else if (is_symlink(dirname))
+    {
+        allocated_ptr = xmalloc_realpath(dirname);
+        if (!allocated_ptr)
+            return -1;
+        realdir = allocated_ptr;
+    }
+    else
+    {
+        allocated_ptr = xstrdup(dirname);
+        if (!allocated_ptr)
+            return -1;
+        realdir = allocated_ptr;
+    }
+
+    fix_path_case(realdir);
+    ret = chdir(realdir);
+
+    free(allocated_ptr);
+    return ret;
 }
 
 #undef chmod
