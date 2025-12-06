@@ -53,6 +53,7 @@ jobs:
       - name: Download latest busybox64.exe from release
         shell: pwsh
         run: |
+          Set-Location -Path "C:\"
           $url = "https://github.com/KIB-in-Batch/busybox-w32/releases/latest/download/busybox64.exe"
           curl.exe -L# $url -o busybox64.exe
           .\busybox64.exe echo "Hi"
@@ -60,7 +61,9 @@ jobs:
       - name: Test KIBROOT mapping and cd/pwd
         shell: pwsh
         run: |
-          Write-Host "== Setting KIBROOT to C: =="
+          Set-Location -Path "C:\"
+          Get-Location
+          Write-Host "== Setting KIBROOT to D: =="
           $env:KIBROOT = "D:"
 
           Write-Host "== Running BusyBox bash test: cd / ; pwd =="
