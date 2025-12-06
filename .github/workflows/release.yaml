@@ -94,6 +94,8 @@ jobs:
       - name: Test copy, move, and remove
         shell: pwsh
         run: |
+          $testDir = "C:\test_busybox"
+          Set-Location -Path $testDir
           $binary = "C:\busybox64.exe"
           # Copy file1.txt to copy_file1.txt
           & $binary cp file1.txt copy_file1.txt
@@ -110,6 +112,8 @@ jobs:
       - name: Test command chaining and redirection
         shell: pwsh
         run: |
+          $testDir = "C:\test_busybox"
+          Set-Location -Path $testDir
           $binary = "C:\busybox64.exe"
           & $binary sh -c "echo 'line1' > chain.txt"
           & $binary sh -c "echo 'line2' >> chain.txt"
