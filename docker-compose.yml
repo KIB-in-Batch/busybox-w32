@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  fedora_build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fedora_build_container
+    volumes:
+      - .:/workspace   # Mounts the directory where this compose file is located
+    tty: true
+    stdin_open: true
