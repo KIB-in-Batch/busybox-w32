@@ -9,6 +9,8 @@ RUN dnf -y update && \
         ncurses-devel \
         perl-Pod-Html \
         mingw64-gcc \
+        dos2unix \
+        cmp \
         && dnf clean all
 
 # Set the working directory inside the container
