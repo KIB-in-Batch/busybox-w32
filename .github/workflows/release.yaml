@@ -107,7 +107,7 @@ jobs:
 
           # Remove files
           & $binary rm copy_file1.txt moved_file2.txt
-          if (Test-Path copy_file1.txt -or Test-Path moved_file2.txt) { throw "Remove failed" }
+          if ((Test-Path copy_file1.txt) -or (Test-Path moved_file2.txt)) { throw "Remove failed" }
 
       - name: Test command chaining and redirection
         shell: pwsh
