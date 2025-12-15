@@ -23,6 +23,8 @@
 
 #include "libbb.h"
 #include "common_bufsiz.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct LINE {
 	struct LINE *next;
@@ -529,7 +531,7 @@ static int writeLines(const char *file, int num1, int num2)
  * If expandFlag is TRUE, then the line is printed specially to
  * show magic characters.
  */
-static int printLines(int num1, int num2, int expandFlag)
+static int printLines(int num1, int num2, int expandFlag, int isN) 
 {
 	const LINE *lp;
 	const char *cp;
@@ -543,6 +545,14 @@ static int printLines(int num1, int num2, int expandFlag)
 		return FALSE;
 
 	while (num1 <= num2) {
+        int lineNum = num1;
+        if (isN == 1) {
+            /*
+             * Special handling here for 'n'.
+             */
+            printf("%d\t", lineNum);
+        }
+
 		if (!expandFlag) {
 			write(STDOUT_FILENO, lp->data, lp->len);
 			setCurNum(num1++);
@@ -702,7 +712,7 @@ static void subCommand(const char *cmd, int num1, int num2)
 
 		if (offset < 0) {
 			if (needPrint) {
-				printLines(num1, num1, FALSE);
+				printLines(num1, num1, FALSE, 0);
 				needPrint = FALSE;
 			}
 			offset = 0;
@@ -732,7 +742,7 @@ static void subCommand(const char *cmd, int num1, int num2)
 			if (globalFlag)
 				continue;
 			if (needPrint) {
-				printLines(num1, num1, FALSE);
+				printLines(num1, num1, FALSE, 0);
 				needPrint = FALSE;
 			}
 			lp = lp->next;
@@ -772,7 +782,7 @@ static void subCommand(const char *cmd, int num1, int num2)
 			continue;
 
 		if (needPrint) {
-			printLines(num1, num1, FALSE);
+			printLines(num1, num1, FALSE, 0);
 			needPrint = FALSE;
 		}
 
@@ -889,11 +899,15 @@ static void doCommands(void)
 			break;
 
 		case 'l':
-			printLines(num1, num2, TRUE);
+			printLines(num1, num2, TRUE, 0);
 			break;
 
 		case 'p':
-			printLines(num1, num2, FALSE);
+			printLines(num1, num2, FALSE, 0);
+			break;
+
+		case 'n':
+			printLines(num1, num2, FALSE, 1);
 			break;
 
 		case 'q':
@@ -959,13 +973,13 @@ static void doCommands(void)
 		case 'z':
 			switch (*cp) {
 			case '-':
-				printLines(curNum - 21, curNum, FALSE);
+				printLines(curNum - 21, curNum, FALSE, 0);
 				break;
 			case '.':
-				printLines(curNum - 11, curNum + 10, FALSE);
+				printLines(curNum - 11, curNum + 10, FALSE, 0);
 				break;
 			default:
-				printLines(curNum, curNum + 21, FALSE);
+				printLines(curNum, curNum + 21, FALSE, 0);
 				break;
 			}
 			break;
@@ -975,12 +989,12 @@ static void doCommands(void)
 				bb_simple_error_msg("no arguments allowed");
 				break;
 			}
-			printLines(curNum, curNum, FALSE);
+			printLines(curNum, curNum, FALSE, 0);
 			break;
 
 		case '-':
 			if (setCurNum(curNum - 1))
-				printLines(curNum, curNum, FALSE);
+				printLines(curNum, curNum, FALSE, 0);
 			break;
 
 		case '=':
@@ -988,11 +1002,11 @@ static void doCommands(void)
 			break;
 		case '\0':
 			if (have1) {
-				printLines(num2, num2, FALSE);
+				printLines(num2, num2, FALSE, 0);
 				break;
 			}
 			if (setCurNum(curNum + 1))
-				printLines(curNum, curNum, FALSE);
+				printLines(curNum, curNum, FALSE, 0);
 			break;
 
 		default:
