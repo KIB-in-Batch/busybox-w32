@@ -6,6 +6,11 @@
  *
  * The "ed" built-in command (much simplified)
  */
+/*
+ * Copyright (c) 2025 by benja2998
+ *
+ * '!' and 'n' commands
+ */
 //config:config ED
 //config:	bool "ed (16 kb)"
 //config:	default y
