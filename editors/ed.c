@@ -795,6 +795,37 @@ static void subCommand(const char *cmd, int num1, int num2)
 }
 
 /*
+ * Execute a shell command.
+ * Returns TRUE if successful.
+ */
+static int doShellEscape(const char *cmd)
+{
+	int status;
+
+	const char *shell_cmd = skip_whitespace(cmd);
+
+	if (*shell_cmd == '\0') {
+		bb_simple_error_msg("missing shell command");
+		return FALSE;
+	}
+
+	// Use system() to execute the command via the shell
+	status = system(shell_cmd);
+
+	if (status == -1) {
+		bb_simple_perror_msg("system call failed");
+		return FALSE;
+	}
+
+	// Print '!' again after the command finishes
+	if (!(option_mask32 & OPT_s)) {
+		puts("!");
+	}
+
+	return TRUE;
+}
+
+/*
  * Read commands until we are told to stop.
  */
 static void doCommands(void)
@@ -909,6 +940,10 @@ static void doCommands(void)
 		case 'n':
 			printLines(num1, num2, FALSE, 1);
 			break;
+
+        case '!':
+            doShellEscape(cp);
+            break;
 
 		case 'q':
 			cp = skip_whitespace(cp);
