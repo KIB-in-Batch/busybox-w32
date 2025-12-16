@@ -32,33 +32,33 @@
 #include <stdlib.h>
 
 typedef struct LINE {
-	struct LINE *next;
-	struct LINE *prev;
-	int len;
-	char data[1];
+    struct LINE *next;
+    struct LINE *prev;
+    int len;
+    char data[1];
 } LINE;
 
 #define searchString bb_common_bufsiz1
 
 enum {
-	USERSIZE = COMMON_BUFSIZE > 1024 ? 1024
-	         : COMMON_BUFSIZE - 1, /* max line length typed in by user */
-	INITBUF_SIZE = 1024, /* initial buffer size */
+    USERSIZE = COMMON_BUFSIZE > 1024 ? 1024
+        : COMMON_BUFSIZE - 1, /* max line length typed in by user */
+    INITBUF_SIZE = 1024, /* initial buffer size */
 };
 
 struct globals {
-	int curNum;
-	int lastNum;
-	int bufUsed;
-	int bufSize;
-	LINE *curLine;
-	char *bufBase;
-	char *bufPtr;
-	char *fileName;
-	const char *prompt;
-	LINE lines;
-	smallint dirty;
-	int marks[26];
+    int curNum;
+    int lastNum;
+    int bufUsed;
+    int bufSize;
+    LINE *curLine;
+    char *bufBase;
+    char *bufPtr;
+    char *fileName;
+    const char *prompt;
+    LINE lines;
+    smallint dirty;
+    int marks[26];
 };
 #define G (*ptr_to_globals)
 #define curLine            (G.curLine           )
@@ -74,22 +74,22 @@ struct globals {
 #define lines              (G.lines             )
 #define marks              (G.marks             )
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
-	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+    setup_common_bufsiz(); \
+    SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 } while (0)
 
 #define OPTION_STR "sp:"
 enum {
-	OPT_s = (1 << 0),
+    OPT_s = (1 << 0),
 };
 
 static int bad_nums(int num1, int num2, const char *for_what)
 {
-	if ((num1 < 1) || (num2 > lastNum) || (num1 > num2)) {
-		bb_error_msg("bad line range for %s", for_what);
-		return 1;
-	}
-	return 0;
+    if ((num1 < 1) || (num2 > lastNum) || (num1 > num2)) {
+        bb_error_msg("bad line range for %s", for_what);
+        return 1;
+    }
+    return 0;
 }
 
 /*
@@ -97,42 +97,42 @@ static int bad_nums(int num1, int num2, const char *for_what)
  */
 static LINE *findLine(int num)
 {
-	LINE *lp;
-	int lnum;
+    LINE *lp;
+    int lnum;
 
-	if ((num < 1) || (num > lastNum)) {
-		bb_error_msg("line number %d does not exist", num);
-		return NULL;
-	}
+    if ((num < 1) || (num > lastNum)) {
+        bb_error_msg("line number %d does not exist", num);
+        return NULL;
+    }
 
-	if (curNum <= 0) {
-		curNum = 1;
-		curLine = lines.next;
-	}
+    if (curNum <= 0) {
+        curNum = 1;
+        curLine = lines.next;
+    }
 
-	if (num == curNum)
-		return curLine;
+    if (num == curNum)
+        return curLine;
 
-	lp = curLine;
-	lnum = curNum;
-	if (num < (curNum / 2)) {
-		lp = lines.next;
-		lnum = 1;
-	} else if (num > ((curNum + lastNum) / 2)) {
-		lp = lines.prev;
-		lnum = lastNum;
-	}
+    lp = curLine;
+    lnum = curNum;
+    if (num < (curNum / 2)) {
+        lp = lines.next;
+        lnum = 1;
+    } else if (num > ((curNum + lastNum) / 2)) {
+        lp = lines.prev;
+        lnum = lastNum;
+    }
 
-	while (lnum < num) {
-		lp = lp->next;
-		lnum++;
-	}
+    while (lnum < num) {
+        lp = lp->next;
+        lnum++;
+    }
 
-	while (lnum > num) {
-		lp = lp->prev;
-		lnum--;
-	}
-	return lp;
+    while (lnum > num) {
+        lp = lp->prev;
+        lnum--;
+    }
+    return lp;
 }
 
 /*
@@ -141,25 +141,25 @@ static LINE *findLine(int num)
  */
 static int findString(const LINE *lp, const char *str, int len, int offset)
 {
-	int left;
-	const char *cp, *ncp;
+    int left;
+    const char *cp, *ncp;
 
-	cp = &lp->data[offset];
-	left = lp->len - offset - len;
+    cp = &lp->data[offset];
+    left = lp->len - offset - len;
 
-	while (left >= 0) {
-		ncp = memchr(cp, str[0], left + 1);
-		if (ncp == NULL)
-			return -1;
-		left -= (ncp - cp);
-		cp = ncp;
-		if (memcmp(cp, str, len) == 0)
-			return (cp - lp->data);
-		cp++;
-		left--;
-	}
+    while (left >= 0) {
+        ncp = memchr(cp, str[0], left + 1);
+        if (ncp == NULL)
+            return -1;
+        left -= (ncp - cp);
+        cp = ncp;
+        if (memcmp(cp, str, len) == 0)
+            return (cp - lp->data);
+        cp++;
+        left--;
+    }
 
-	return -1;
+    return -1;
 }
 
 /*
@@ -171,38 +171,38 @@ static int findString(const LINE *lp, const char *str, int len, int offset)
  */
 static NOINLINE int searchLines(const char *str, int num1, int num2)
 {
-	const LINE *lp;
-	int len;
+    const LINE *lp;
+    int len;
 
-	if (bad_nums(num1, num2, "search"))
-		return 0;
+    if (bad_nums(num1, num2, "search"))
+        return 0;
 
-	if (*str == '\0') {
-		if (searchString[0] == '\0') {
-			bb_simple_error_msg("no previous search string");
-			return 0;
-		}
-		str = searchString;
-	}
+    if (*str == '\0') {
+        if (searchString[0] == '\0') {
+            bb_simple_error_msg("no previous search string");
+            return 0;
+        }
+        str = searchString;
+    }
 
-	if (str != searchString)
-		strcpy(searchString, str);
+    if (str != searchString)
+        strcpy(searchString, str);
 
-	len = strlen(str);
+    len = strlen(str);
 
-	lp = findLine(num1);
-	if (lp == NULL)
-		return 0;
+    lp = findLine(num1);
+    if (lp == NULL)
+        return 0;
 
-	while (num1 <= num2) {
-		if (findString(lp, str, len, 0) >= 0)
-			return num1;
-		num1++;
-		lp = lp->next;
-	}
+    while (num1 <= num2) {
+        if (findString(lp, str, len, 0) >= 0)
+            return num1;
+        num1++;
+        lp = lp->next;
+    }
 
-	bb_error_msg("can't find string \"%s\"", str);
-	return 0;
+    bb_error_msg("can't find string \"%s\"", str);
+    return 0;
 }
 
 /*
@@ -215,89 +215,89 @@ static NOINLINE int searchLines(const char *str, int num1, int num2)
  */
 static const char* getNum(const char *cp, smallint *retHaveNum, int *retNum)
 {
-	char *endStr, str[USERSIZE];
-	int value, num;
-	smallint haveNum, minus;
+    char *endStr, str[USERSIZE];
+    int value, num;
+    smallint haveNum, minus;
 
-	value = 0;
-	haveNum = FALSE;
-	minus = 0;
+    value = 0;
+    haveNum = FALSE;
+    minus = 0;
 
-	while (TRUE) {
-		cp = skip_whitespace(cp);
+    while (TRUE) {
+        cp = skip_whitespace(cp);
 
-		switch (*cp) {
-			case '.':
-				haveNum = TRUE;
-				num = curNum;
-				cp++;
-				break;
+        switch (*cp) {
+            case '.':
+                haveNum = TRUE;
+                num = curNum;
+                cp++;
+                break;
 
-			case '$':
-				haveNum = TRUE;
-				num = lastNum;
-				cp++;
-				break;
+            case '$':
+                haveNum = TRUE;
+                num = lastNum;
+                cp++;
+                break;
 
-			case '\'':
-				cp++;
-				if ((unsigned)(*cp - 'a') >= 26) {
-					bb_simple_error_msg("bad mark name");
-					return NULL;
-				}
-				haveNum = TRUE;
-				num = marks[(unsigned)(*cp - 'a')];
-				cp++;
-				break;
+            case '\'':
+                cp++;
+                if ((unsigned)(*cp - 'a') >= 26) {
+                    bb_simple_error_msg("bad mark name");
+                    return NULL;
+                }
+                haveNum = TRUE;
+                num = marks[(unsigned)(*cp - 'a')];
+                cp++;
+                break;
 
-			case '/':
-				strcpy(str, ++cp);
-				endStr = strchr(str, '/');
-				if (endStr) {
-					*endStr++ = '\0';
-					cp += (endStr - str);
-				} else
-					cp = "";
-				num = searchLines(str, curNum, lastNum);
-				if (num == 0)
-					return NULL;
-				haveNum = TRUE;
-				break;
+            case '/':
+                strcpy(str, ++cp);
+                endStr = strchr(str, '/');
+                if (endStr) {
+                    *endStr++ = '\0';
+                    cp += (endStr - str);
+                } else
+                    cp = "";
+                num = searchLines(str, curNum, lastNum);
+                if (num == 0)
+                    return NULL;
+                haveNum = TRUE;
+                break;
 
-			default:
-				if (!isdigit(*cp)) {
-					*retHaveNum = haveNum;
-					*retNum = value;
-					return cp;
-				}
-				num = 0;
-				while (isdigit(*cp))
-					num = num * 10 + *cp++ - '0';
-				haveNum = TRUE;
-				break;
-		}
+            default:
+                if (!isdigit(*cp)) {
+                    *retHaveNum = haveNum;
+                    *retNum = value;
+                    return cp;
+                }
+                num = 0;
+                while (isdigit(*cp))
+                    num = num * 10 + *cp++ - '0';
+                haveNum = TRUE;
+                break;
+        }
 
-		value += (minus ? -num : num);
+        value += (minus ? -num : num);
 
-		cp = skip_whitespace(cp);
+        cp = skip_whitespace(cp);
 
-		switch (*cp) {
-			case '-':
-				minus = 1;
-				cp++;
-				break;
+        switch (*cp) {
+            case '-':
+                minus = 1;
+                cp++;
+                break;
 
-			case '+':
-				minus = 0;
-				cp++;
-				break;
+            case '+':
+                minus = 0;
+                cp++;
+                break;
 
-			default:
-				*retHaveNum = haveNum;
-				*retNum = value;
-				return cp;
-		}
-	}
+            default:
+                *retHaveNum = haveNum;
+                *retNum = value;
+                return cp;
+        }
+    }
 }
 
 /*
@@ -306,14 +306,14 @@ static const char* getNum(const char *cp, smallint *retHaveNum, int *retNum)
  */
 static int setCurNum(int num)
 {
-	LINE *lp;
+    LINE *lp;
 
-	lp = findLine(num);
-	if (lp == NULL)
-		return FALSE;
-	curNum = num;
-	curLine = lp;
-	return TRUE;
+    lp = findLine(num);
+    if (lp == NULL)
+        return FALSE;
+    curNum = num;
+    curLine = lp;
+    return TRUE;
 }
 
 /*
@@ -325,38 +325,38 @@ static int setCurNum(int num)
  */
 static int insertLine(int num, const char *data, int len)
 {
-	LINE *newLp, *lp;
+    LINE *newLp, *lp;
 
-	if ((num < 1) || (num > lastNum + 1)) {
-		bb_simple_error_msg("inserting at bad line number");
-		return FALSE;
-	}
+    if ((num < 1) || (num > lastNum + 1)) {
+        bb_simple_error_msg("inserting at bad line number");
+        return FALSE;
+    }
 
-	newLp = xmalloc(sizeof(LINE) + len - 1);
+    newLp = xmalloc(sizeof(LINE) + len - 1);
 
-	memcpy(newLp->data, data, len);
-	newLp->len = len;
+    memcpy(newLp->data, data, len);
+    newLp->len = len;
 
-	if (num > lastNum)
-		lp = &lines;
-	else {
-		lp = findLine(num);
-		if (lp == NULL) {
-			free((char *) newLp);
-			return FALSE;
-		}
-	}
+    if (num > lastNum)
+        lp = &lines;
+    else {
+        lp = findLine(num);
+        if (lp == NULL) {
+            free((char *) newLp);
+            return FALSE;
+        }
+    }
 
-	newLp->next = lp;
-	newLp->prev = lp->prev;
-	lp->prev->next = newLp;
-	lp->prev = newLp;
+    newLp->next = lp;
+    newLp->prev = lp->prev;
+    lp->prev->next = newLp;
+    lp->prev = newLp;
 
-	if (num <= curNum)
-		curLine = curLine->prev;
-	lastNum++;
-	dirty = TRUE;
-	return setCurNum(num);
+    if (num <= curNum)
+        curLine = curLine->prev;
+    lastNum++;
+    dirty = TRUE;
+    return setCurNum(num);
 }
 
 /*
@@ -367,26 +367,26 @@ static int insertLine(int num, const char *data, int len)
  */
 static void addLines(int num)
 {
-	int len;
-	char buf[USERSIZE + 1];
+    int len;
+    char buf[USERSIZE + 1];
 
-	while (1) {
-		/* Returns:
-		 * -1 on read errors or EOF, or on bare Ctrl-D.
-		 * 0  on ctrl-C,
-		 * >0 length of input string, including terminating '\n'
-		 */
-		len = read_line_input(NULL, "", buf, sizeof(buf));
-		if (len <= 0) {
-			/* Previously, ctrl-C was exiting to shell.
-			 * Now we exit to ed prompt. Is in important? */
-			return;
-		}
-		if (buf[0] == '.' && buf[1] == '\n' && buf[2] == '\0')
-			return;
-		if (!insertLine(num++, buf, len))
-			return;
-	}
+    while (1) {
+        /* Returns:
+         * -1 on read errors or EOF, or on bare Ctrl-D.
+         * 0  on ctrl-C,
+         * >0 length of input string, including terminating '\n'
+         */
+        len = read_line_input(NULL, "", buf, sizeof(buf));
+        if (len <= 0) {
+            /* Previously, ctrl-C was exiting to shell.
+             * Now we exit to ed prompt. Is in important? */
+            return;
+        }
+        if (buf[0] == '.' && buf[1] == '\n' && buf[2] == '\0')
+            return;
+        if (!insertLine(num++, buf, len))
+            return;
+    }
 }
 
 /*
@@ -395,86 +395,86 @@ static void addLines(int num)
  */
 static int readLines(const char *file, int num)
 {
-	int fd, cc;
-	int len;
-	unsigned charCount;
-	char *cp;
+    int fd, cc;
+    int len;
+    unsigned charCount;
+    char *cp;
 
-	if ((num < 1) || (num > lastNum + 1)) {
-		bb_simple_error_msg("bad line for read");
-		return FALSE;
-	}
+    if ((num < 1) || (num > lastNum + 1)) {
+        bb_simple_error_msg("bad line for read");
+        return FALSE;
+    }
 
-	fd = open(file, 0);
-	if (fd < 0) {
-		bb_simple_perror_msg(file);
-		return FALSE;
-	}
+    fd = open(file, 0);
+    if (fd < 0) {
+        bb_simple_perror_msg(file);
+        return FALSE;
+    }
 
-	bufPtr = bufBase;
-	bufUsed = 0;
-	charCount = 0;
-	cc = 0;
+    bufPtr = bufBase;
+    bufUsed = 0;
+    charCount = 0;
+    cc = 0;
 
-	do {
-		cp = memchr(bufPtr, '\n', bufUsed);
+    do {
+        cp = memchr(bufPtr, '\n', bufUsed);
 
-		if (cp) {
-			len = (cp - bufPtr) + 1;
-			if (!insertLine(num, bufPtr, len)) {
-				close(fd);
-				return FALSE;
-			}
-			bufPtr += len;
-			bufUsed -= len;
-			charCount += len;
-			num++;
-			continue;
-		}
+        if (cp) {
+            len = (cp - bufPtr) + 1;
+            if (!insertLine(num, bufPtr, len)) {
+                close(fd);
+                return FALSE;
+            }
+            bufPtr += len;
+            bufUsed -= len;
+            charCount += len;
+            num++;
+            continue;
+        }
 
-		if (bufPtr != bufBase) {
-			memcpy(bufBase, bufPtr, bufUsed);
-			bufPtr = bufBase + bufUsed;
-		}
+        if (bufPtr != bufBase) {
+            memcpy(bufBase, bufPtr, bufUsed);
+            bufPtr = bufBase + bufUsed;
+        }
 
-		if (bufUsed >= bufSize) {
-			len = (bufSize * 3) / 2;
-			cp = xrealloc(bufBase, len);
-			bufBase = cp;
-			bufPtr = bufBase + bufUsed;
-			bufSize = len;
-		}
+        if (bufUsed >= bufSize) {
+            len = (bufSize * 3) / 2;
+            cp = xrealloc(bufBase, len);
+            bufBase = cp;
+            bufPtr = bufBase + bufUsed;
+            bufSize = len;
+        }
 
-		cc = safe_read(fd, bufPtr, bufSize - bufUsed);
-		bufUsed += cc;
-		bufPtr = bufBase;
-	} while (cc > 0);
+        cc = safe_read(fd, bufPtr, bufSize - bufUsed);
+        bufUsed += cc;
+        bufPtr = bufBase;
+    } while (cc > 0);
 
-	if (cc < 0) {
-		bb_simple_perror_msg(file);
-		close(fd);
-		return FALSE;
-	}
+    if (cc < 0) {
+        bb_simple_perror_msg(file);
+        close(fd);
+        return FALSE;
+    }
 
-	if (bufUsed) {
-		if (!insertLine(num, bufPtr, bufUsed)) {
-			close(fd);
-			return -1;
-		}
-		charCount += bufUsed;
-	}
+    if (bufUsed) {
+        if (!insertLine(num, bufPtr, bufUsed)) {
+            close(fd);
+            return -1;
+        }
+        charCount += bufUsed;
+    }
 
-	close(fd);
+    close(fd);
 
-	/* https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ed.html
-	 * "Read Command"
-	 * "...the number of bytes read shall be written to standard output
-	 * in the following format:
-	 * "%d\n", <number of bytes read>
-	 */
-	if (!(option_mask32 & OPT_s))
-		printf("%u\n", charCount);
-	return TRUE;
+    /* https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ed.html
+     * "Read Command"
+     * "...the number of bytes read shall be written to standard output
+     * in the following format:
+     * "%d\n", <number of bytes read>
+     */
+    if (!(option_mask32 & OPT_s))
+        printf("%u\n", charCount);
+    return TRUE;
 }
 
 /*
@@ -483,51 +483,51 @@ static int readLines(const char *file, int num)
  */
 static int writeLines(const char *file, int num1, int num2)
 {
-	LINE *lp;
-	int fd;
-	unsigned charCount;
+    LINE *lp;
+    int fd;
+    unsigned charCount;
 
-	if (bad_nums(num1, num2, "write"))
-		return FALSE;
+    if (bad_nums(num1, num2, "write"))
+        return FALSE;
 
-	charCount = 0;
+    charCount = 0;
 
-	fd = creat(file, 0666);
-	if (fd < 0) {
-		bb_simple_perror_msg(file);
-		return FALSE;
-	}
+    fd = creat(file, 0666);
+    if (fd < 0) {
+        bb_simple_perror_msg(file);
+        return FALSE;
+    }
 
-	lp = findLine(num1);
-	if (lp == NULL) {
-		close(fd);
-		return FALSE;
-	}
+    lp = findLine(num1);
+    if (lp == NULL) {
+        close(fd);
+        return FALSE;
+    }
 
-	while (num1++ <= num2) {
-		if (full_write(fd, lp->data, lp->len) != lp->len) {
-			bb_simple_perror_msg(file);
-			close(fd);
-			return FALSE;
-		}
-		charCount += lp->len;
-		lp = lp->next;
-	}
+    while (num1++ <= num2) {
+        if (full_write(fd, lp->data, lp->len) != lp->len) {
+            bb_simple_perror_msg(file);
+            close(fd);
+            return FALSE;
+        }
+        charCount += lp->len;
+        lp = lp->next;
+    }
 
-	if (close(fd) < 0) {
-		bb_simple_perror_msg(file);
-		return FALSE;
-	}
+    if (close(fd) < 0) {
+        bb_simple_perror_msg(file);
+        return FALSE;
+    }
 
-	/* https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ed.html
-	 * "Write Command"
-	 * "...the number of bytes written shall be written to standard output,
-	 * unless the -s option was specified, in the following format:
-	 * "%d\n", <number of bytes written>
-	 */
-	if (!(option_mask32 & OPT_s))
-		printf("%u\n", charCount);
-	return TRUE;
+    /* https://pubs.opengroup.org/onlinepubs/9699919799/utilities/ed.html
+     * "Write Command"
+     * "...the number of bytes written shall be written to standard output,
+     * unless the -s option was specified, in the following format:
+     * "%d\n", <number of bytes written>
+     */
+    if (!(option_mask32 & OPT_s))
+        printf("%u\n", charCount);
+    return TRUE;
 }
 
 /*
@@ -538,18 +538,18 @@ static int writeLines(const char *file, int num1, int num2)
  */
 static int printLines(int num1, int num2, int expandFlag, int isN) 
 {
-	const LINE *lp;
-	const char *cp;
-	int ch, count;
+    const LINE *lp;
+    const char *cp;
+    int ch, count;
 
-	if (bad_nums(num1, num2, "print"))
-		return FALSE;
+    if (bad_nums(num1, num2, "print"))
+        return FALSE;
 
-	lp = findLine(num1);
-	if (lp == NULL)
-		return FALSE;
+    lp = findLine(num1);
+    if (lp == NULL)
+        return FALSE;
 
-	while (num1 <= num2) {
+    while (num1 <= num2) {
         int lineNum = num1;
         if (isN == 1) {
             /*
@@ -558,35 +558,35 @@ static int printLines(int num1, int num2, int expandFlag, int isN)
             printf("%d\t", lineNum);
         }
 
-		if (!expandFlag) {
-			write(STDOUT_FILENO, lp->data, lp->len);
-			setCurNum(num1++);
-			lp = lp->next;
-			continue;
-		}
+        if (!expandFlag) {
+            write(STDOUT_FILENO, lp->data, lp->len);
+            setCurNum(num1++);
+            lp = lp->next;
+            continue;
+        }
 
-		/*
-		 * Show control characters and characters with the
-		 * high bit set specially.
-		 */
-		cp = lp->data;
-		count = lp->len;
+        /*
+         * Show control characters and characters with the
+         * high bit set specially.
+         */
+        cp = lp->data;
+        count = lp->len;
 
-		if ((count > 0) && (cp[count - 1] == '\n'))
-			count--;
+        if ((count > 0) && (cp[count - 1] == '\n'))
+            count--;
 
-		while (count-- > 0) {
-			ch = (unsigned char) *cp++;
-			fputc_printable(ch | PRINTABLE_META, stdout);
-		}
+        while (count-- > 0) {
+            ch = (unsigned char) *cp++;
+            fputc_printable(ch | PRINTABLE_META, stdout);
+        }
 
-		fputs_stdout("$\n");
+        fputs_stdout("$\n");
 
-		setCurNum(num1++);
-		lp = lp->next;
-	}
+        setCurNum(num1++);
+        lp = lp->next;
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 /*
@@ -594,40 +594,40 @@ static int printLines(int num1, int num2, int expandFlag, int isN)
  */
 static void deleteLines(int num1, int num2)
 {
-	LINE *lp, *nlp, *plp;
-	int count;
+    LINE *lp, *nlp, *plp;
+    int count;
 
-	if (bad_nums(num1, num2, "delete"))
-		return;
+    if (bad_nums(num1, num2, "delete"))
+        return;
 
-	lp = findLine(num1);
-	if (lp == NULL)
-		return;
+    lp = findLine(num1);
+    if (lp == NULL)
+        return;
 
-	if ((curNum >= num1) && (curNum <= num2)) {
-		if (num2 < lastNum)
-			setCurNum(num2 + 1);
-		else if (num1 > 1)
-			setCurNum(num1 - 1);
-		else
-			curNum = 0;
-	}
+    if ((curNum >= num1) && (curNum <= num2)) {
+        if (num2 < lastNum)
+            setCurNum(num2 + 1);
+        else if (num1 > 1)
+            setCurNum(num1 - 1);
+        else
+            curNum = 0;
+    }
 
-	count = num2 - num1 + 1;
-	if (curNum > num2)
-		curNum -= count;
-	lastNum -= count;
+    count = num2 - num1 + 1;
+    if (curNum > num2)
+        curNum -= count;
+    lastNum -= count;
 
-	while (count-- > 0) {
-		nlp = lp->next;
-		plp = lp->prev;
-		plp->next = nlp;
-		nlp->prev = plp;
-		free(lp);
-		lp = nlp;
-	}
+    while (count-- > 0) {
+        nlp = lp->next;
+        plp = lp->prev;
+        plp->next = nlp;
+        nlp->prev = plp;
+        free(lp);
+        lp = nlp;
+    }
 
-	dirty = TRUE;
+    dirty = TRUE;
 }
 
 /*
@@ -636,167 +636,167 @@ static void deleteLines(int num1, int num2)
  */
 static void subCommand(const char *cmd, int num1, int num2)
 {
-	char *cp, *oldStr, *newStr, buf[USERSIZE];
-	int delim, oldLen, newLen, deltaLen, offset;
-	LINE *lp, *nlp;
-	int globalFlag, printFlag, didSub, needPrint;
+    char *cp, *oldStr, *newStr, buf[USERSIZE];
+    int delim, oldLen, newLen, deltaLen, offset;
+    LINE *lp, *nlp;
+    int globalFlag, printFlag, didSub, needPrint;
 
-	if (bad_nums(num1, num2, "substitute"))
-		return;
+    if (bad_nums(num1, num2, "substitute"))
+        return;
 
-	globalFlag = FALSE;
-	printFlag = FALSE;
-	didSub = FALSE;
-	needPrint = FALSE;
+    globalFlag = FALSE;
+    printFlag = FALSE;
+    didSub = FALSE;
+    needPrint = FALSE;
 
-	/*
-	 * Copy the command so we can modify it.
-	 */
-	strcpy(buf, cmd);
-	cp = buf;
+    /*
+     * Copy the command so we can modify it.
+     */
+    strcpy(buf, cmd);
+    cp = buf;
 
-	if (isblank(*cp) || (*cp == '\0')) {
-		bb_simple_error_msg("bad delimiter for substitute");
-		return;
-	}
+    if (isblank(*cp) || (*cp == '\0')) {
+        bb_simple_error_msg("bad delimiter for substitute");
+        return;
+    }
 
-	delim = *cp++;
-	oldStr = cp;
+    delim = *cp++;
+    oldStr = cp;
 
-	cp = strchr(cp, delim);
-	if (cp == NULL) {
-		bb_simple_error_msg("missing 2nd delimiter for substitute");
-		return;
-	}
+    cp = strchr(cp, delim);
+    if (cp == NULL) {
+        bb_simple_error_msg("missing 2nd delimiter for substitute");
+        return;
+    }
 
-	*cp++ = '\0';
+    *cp++ = '\0';
 
-	newStr = cp;
-	cp = strchr(cp, delim);
+    newStr = cp;
+    cp = strchr(cp, delim);
 
-	if (cp)
-		*cp++ = '\0';
-	else
-		cp = (char*)"";
+    if (cp)
+        *cp++ = '\0';
+    else
+        cp = (char*)"";
 
-	while (*cp) switch (*cp++) {
-		case 'g':
-			globalFlag = TRUE;
-			break;
-		case 'p':
-			printFlag = TRUE;
-			break;
-		default:
-			bb_simple_error_msg("unknown option for substitute");
-			return;
-	}
+    while (*cp) switch (*cp++) {
+        case 'g':
+            globalFlag = TRUE;
+            break;
+        case 'p':
+            printFlag = TRUE;
+            break;
+        default:
+            bb_simple_error_msg("unknown option for substitute");
+            return;
+    }
 
-	if (*oldStr == '\0') {
-		if (searchString[0] == '\0') {
-			bb_simple_error_msg("no previous search string");
-			return;
-		}
-		oldStr = searchString;
-	}
+    if (*oldStr == '\0') {
+        if (searchString[0] == '\0') {
+            bb_simple_error_msg("no previous search string");
+            return;
+        }
+        oldStr = searchString;
+    }
 
-	if (oldStr != searchString)
-		strcpy(searchString, oldStr);
+    if (oldStr != searchString)
+        strcpy(searchString, oldStr);
 
-	lp = findLine(num1);
-	if (lp == NULL)
-		return;
+    lp = findLine(num1);
+    if (lp == NULL)
+        return;
 
-	oldLen = strlen(oldStr);
-	newLen = strlen(newStr);
-	deltaLen = newLen - oldLen;
-	offset = 0;
-	nlp = NULL;
+    oldLen = strlen(oldStr);
+    newLen = strlen(newStr);
+    deltaLen = newLen - oldLen;
+    offset = 0;
+    nlp = NULL;
 
-	while (num1 <= num2) {
-		offset = findString(lp, oldStr, oldLen, offset);
+    while (num1 <= num2) {
+        offset = findString(lp, oldStr, oldLen, offset);
 
-		if (offset < 0) {
-			if (needPrint) {
-				printLines(num1, num1, FALSE, 0);
-				needPrint = FALSE;
-			}
-			offset = 0;
-			lp = lp->next;
-			num1++;
-			continue;
-		}
+        if (offset < 0) {
+            if (needPrint) {
+                printLines(num1, num1, FALSE, 0);
+                needPrint = FALSE;
+            }
+            offset = 0;
+            lp = lp->next;
+            num1++;
+            continue;
+        }
 
-		needPrint = printFlag;
-		didSub = TRUE;
-		dirty = TRUE;
+        needPrint = printFlag;
+        didSub = TRUE;
+        dirty = TRUE;
 
-		/*
-		 * If the replacement string is the same size or shorter
-		 * than the old string, then the substitution is easy.
-		 */
-		if (deltaLen <= 0) {
-			memcpy(&lp->data[offset], newStr, newLen);
-			if (deltaLen) {
-				memmove(&lp->data[offset + newLen],
-					&lp->data[offset + oldLen],
-					lp->len - offset - oldLen);
+        /*
+         * If the replacement string is the same size or shorter
+         * than the old string, then the substitution is easy.
+         */
+        if (deltaLen <= 0) {
+            memcpy(&lp->data[offset], newStr, newLen);
+            if (deltaLen) {
+                memmove(&lp->data[offset + newLen],
+                        &lp->data[offset + oldLen],
+                        lp->len - offset - oldLen);
 
-				lp->len += deltaLen;
-			}
-			offset += newLen;
-			if (globalFlag)
-				continue;
-			if (needPrint) {
-				printLines(num1, num1, FALSE, 0);
-				needPrint = FALSE;
-			}
-			lp = lp->next;
-			num1++;
-			continue;
-		}
+                lp->len += deltaLen;
+            }
+            offset += newLen;
+            if (globalFlag)
+                continue;
+            if (needPrint) {
+                printLines(num1, num1, FALSE, 0);
+                needPrint = FALSE;
+            }
+            lp = lp->next;
+            num1++;
+            continue;
+        }
 
-		/*
-		 * The new string is larger, so allocate a new line
-		 * structure and use that.  Link it in place of
-		 * the old line structure.
-		 */
-		nlp = xmalloc(sizeof(LINE) + lp->len + deltaLen);
+        /*
+         * The new string is larger, so allocate a new line
+         * structure and use that.  Link it in place of
+         * the old line structure.
+         */
+        nlp = xmalloc(sizeof(LINE) + lp->len + deltaLen);
 
-		nlp->len = lp->len + deltaLen;
+        nlp->len = lp->len + deltaLen;
 
-		memcpy(nlp->data, lp->data, offset);
-		memcpy(&nlp->data[offset], newStr, newLen);
-		memcpy(&nlp->data[offset + newLen],
-			&lp->data[offset + oldLen],
-			lp->len - offset - oldLen);
+        memcpy(nlp->data, lp->data, offset);
+        memcpy(&nlp->data[offset], newStr, newLen);
+        memcpy(&nlp->data[offset + newLen],
+                &lp->data[offset + oldLen],
+                lp->len - offset - oldLen);
 
-		nlp->next = lp->next;
-		nlp->prev = lp->prev;
-		nlp->prev->next = nlp;
-		nlp->next->prev = nlp;
+        nlp->next = lp->next;
+        nlp->prev = lp->prev;
+        nlp->prev->next = nlp;
+        nlp->next->prev = nlp;
 
-		if (curLine == lp)
-			curLine = nlp;
+        if (curLine == lp)
+            curLine = nlp;
 
-		free(lp);
-		lp = nlp;
+        free(lp);
+        lp = nlp;
 
-		offset += newLen;
+        offset += newLen;
 
-		if (globalFlag)
-			continue;
+        if (globalFlag)
+            continue;
 
-		if (needPrint) {
-			printLines(num1, num1, FALSE, 0);
-			needPrint = FALSE;
-		}
+        if (needPrint) {
+            printLines(num1, num1, FALSE, 0);
+            needPrint = FALSE;
+        }
 
-		lp = lp->next;
-		num1++;
-	}
+        lp = lp->next;
+        num1++;
+    }
 
-	if (!didSub)
-		bb_error_msg("no substitutions found for \"%s\"", oldStr);
+    if (!didSub)
+        bb_error_msg("no substitutions found for \"%s\"", oldStr);
 }
 
 /*
@@ -805,29 +805,29 @@ static void subCommand(const char *cmd, int num1, int num2)
  */
 static int doShellEscape(const char *cmd)
 {
-	int status;
+    int status;
 
-	const char *shell_cmd = skip_whitespace(cmd);
+    const char *shell_cmd = skip_whitespace(cmd);
 
-	if (*shell_cmd == '\0') {
-		bb_simple_error_msg("missing shell command");
-		return FALSE;
-	}
+    if (*shell_cmd == '\0') {
+        bb_simple_error_msg("missing shell command");
+        return FALSE;
+    }
 
-	// Use system() to execute the command via the shell
-	status = system(shell_cmd);
+    // Use system() to execute the command via the shell
+    status = system(shell_cmd);
 
-	if (status == -1) {
-		bb_simple_perror_msg("system call failed");
-		return FALSE;
-	}
+    if (status == -1) {
+        bb_simple_perror_msg("system call failed");
+        return FALSE;
+    }
 
-	// Print '!' again after the command finishes
-	if (!(option_mask32 & OPT_s)) {
-		puts("!");
-	}
+    // Print '!' again after the command finishes
+    if (!(option_mask32 & OPT_s)) {
+        puts("!");
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 /*
@@ -835,250 +835,250 @@ static int doShellEscape(const char *cmd)
  */
 static void doCommands(void)
 {
-	while (TRUE) {
-		char buf[USERSIZE];
-		const char *cp;
-		int len;
-		int n, num1, num2;
-		smallint h, have1, have2;
+    while (TRUE) {
+        char buf[USERSIZE];
+        const char *cp;
+        int len;
+        int n, num1, num2;
+        smallint h, have1, have2;
 
-		/* Returns:
-		 * -1 on read errors or EOF, or on bare Ctrl-D.
-		 * 0  on ctrl-C,
-		 * >0 length of input string, including terminating '\n'
-		 */
-		len = read_line_input(NULL, prompt, buf, sizeof(buf));
-		if (len <= 0)
-			return;
-		while (len && isspace(buf[--len]))
-			buf[len] = '\0';
+        /* Returns:
+         * -1 on read errors or EOF, or on bare Ctrl-D.
+         * 0  on ctrl-C,
+         * >0 length of input string, including terminating '\n'
+         */
+        len = read_line_input(NULL, prompt, buf, sizeof(buf));
+        if (len <= 0)
+            return;
+        while (len && isspace(buf[--len]))
+            buf[len] = '\0';
 
-		if ((curNum == 0) && (lastNum > 0)) {
-			curNum = 1;
-			curLine = lines.next;
-		}
+        if ((curNum == 0) && (lastNum > 0)) {
+            curNum = 1;
+            curLine = lines.next;
+        }
 
-		have1 = FALSE;
-		have2 = FALSE;
-		/* Don't pass &haveN, &numN to getNum() since this forces
-		 * compiler to keep them on stack, not in registers,
-		 * which is usually quite suboptimal.
-		 * Using intermediate variables shrinks code by ~150 bytes.
-		 */
-		cp = getNum(skip_whitespace(buf), &h, &n);
-		if (!cp)
-			continue;
-		have1 = h;
-		num1 = n;
-		cp = skip_whitespace(cp);
-		if (*cp == ',') {
-			cp = getNum(cp + 1, &h, &n);
-			if (!cp)
-				continue;
-			num2 = n;
-			if (!have1)
-				num1 = 1;
-			if (!h)
-				num2 = lastNum;
-			have1 = TRUE;
-			have2 = TRUE;
-		}
-		if (!have1)
-			num1 = curNum;
-		if (!have2)
-			num2 = num1;
+        have1 = FALSE;
+        have2 = FALSE;
+        /* Don't pass &haveN, &numN to getNum() since this forces
+         * compiler to keep them on stack, not in registers,
+         * which is usually quite suboptimal.
+         * Using intermediate variables shrinks code by ~150 bytes.
+         */
+        cp = getNum(skip_whitespace(buf), &h, &n);
+        if (!cp)
+            continue;
+        have1 = h;
+        num1 = n;
+        cp = skip_whitespace(cp);
+        if (*cp == ',') {
+            cp = getNum(cp + 1, &h, &n);
+            if (!cp)
+                continue;
+            num2 = n;
+            if (!have1)
+                num1 = 1;
+            if (!h)
+                num2 = lastNum;
+            have1 = TRUE;
+            have2 = TRUE;
+        }
+        if (!have1)
+            num1 = curNum;
+        if (!have2)
+            num2 = num1;
 
-		switch (*cp++) {
-		case 'a':
-			addLines(num1 + 1);
-			break;
+        switch (*cp++) {
+            case 'a':
+                addLines(num1 + 1);
+                break;
 
-		case 'c':
-			deleteLines(num1, num2);
-			addLines(num1);
-			break;
+            case 'c':
+                deleteLines(num1, num2);
+                addLines(num1);
+                break;
 
-		case 'd':
-			deleteLines(num1, num2);
-			break;
+            case 'd':
+                deleteLines(num1, num2);
+                break;
 
-		case 'f':
-			if (*cp != '\0' && *cp != ' ') {
-				bb_simple_error_msg("bad file command");
-				break;
-			}
-			cp = skip_whitespace(cp);
-			if (*cp == '\0') {
-				if (fileName)
-					printf("\"%s\"\n", fileName);
-				else
-					puts("No file name");
-				break;
-			}
-			free(fileName);
-			fileName = xstrdup(cp);
-			break;
+            case 'f':
+                if (*cp != '\0' && *cp != ' ') {
+                    bb_simple_error_msg("bad file command");
+                    break;
+                }
+                cp = skip_whitespace(cp);
+                if (*cp == '\0') {
+                    if (fileName)
+                        printf("\"%s\"\n", fileName);
+                    else
+                        puts("No file name");
+                    break;
+                }
+                free(fileName);
+                fileName = xstrdup(cp);
+                break;
 
-		case 'i':
-			if (!have1 && lastNum == 0)
-				num1 = 1;
-			addLines(num1);
-			break;
+            case 'i':
+                if (!have1 && lastNum == 0)
+                    num1 = 1;
+                addLines(num1);
+                break;
 
-		case 'k':
-			cp = skip_whitespace(cp);
-			if ((unsigned)(*cp - 'a') >= 26 || cp[1]) {
-				bb_simple_error_msg("bad mark name");
-				break;
-			}
-			marks[(unsigned)(*cp - 'a')] = num2;
-			break;
+            case 'k':
+                cp = skip_whitespace(cp);
+                if ((unsigned)(*cp - 'a') >= 26 || cp[1]) {
+                    bb_simple_error_msg("bad mark name");
+                    break;
+                }
+                marks[(unsigned)(*cp - 'a')] = num2;
+                break;
 
-		case 'l':
-			printLines(num1, num2, TRUE, 0);
-			break;
+            case 'l':
+                printLines(num1, num2, TRUE, 0);
+                break;
 
-		case 'p':
-			printLines(num1, num2, FALSE, 0);
-			break;
+            case 'p':
+                printLines(num1, num2, FALSE, 0);
+                break;
 
-		case 'n':
-			printLines(num1, num2, FALSE, 1);
-			break;
+            case 'n':
+                printLines(num1, num2, FALSE, 1);
+                break;
 
-        case '!':
-            doShellEscape(cp);
-            break;
+            case '!':
+                doShellEscape(cp);
+                break;
 
-		case 'q':
-			cp = skip_whitespace(cp);
-			if (have1 || *cp) {
-				bb_simple_error_msg("bad quit command");
-				break;
-			}
-			if (!dirty)
-				return;
-			len = read_line_input(NULL, "Really quit? ", buf, 16);
-			/* read error/EOF - no way to continue */
-			if (len < 0)
-				return;
-			cp = skip_whitespace(buf);
-			if ((*cp | 0x20) == 'y') /* Y or y */
-				return;
-			break;
+            case 'q':
+                cp = skip_whitespace(cp);
+                if (have1 || *cp) {
+                    bb_simple_error_msg("bad quit command");
+                    break;
+                }
+                if (!dirty)
+                    return;
+                len = read_line_input(NULL, "Really quit? ", buf, 16);
+                /* read error/EOF - no way to continue */
+                if (len < 0)
+                    return;
+                cp = skip_whitespace(buf);
+                if ((*cp | 0x20) == 'y') /* Y or y */
+                    return;
+                break;
 
-		case 'r':
-			if (*cp != '\0' && *cp != ' ') {
-				bb_simple_error_msg("bad read command");
-				break;
-			}
-			cp = skip_whitespace(cp);
-			if (*cp == '\0') {
-				bb_simple_error_msg("no file name");
-				break;
-			}
-			if (!have1)
-				num1 = lastNum;
-			if (readLines(cp, num1 + 1))
-				break;
-			if (fileName == NULL)
-				fileName = xstrdup(cp);
-			break;
+            case 'r':
+                if (*cp != '\0' && *cp != ' ') {
+                    bb_simple_error_msg("bad read command");
+                    break;
+                }
+                cp = skip_whitespace(cp);
+                if (*cp == '\0') {
+                    bb_simple_error_msg("no file name");
+                    break;
+                }
+                if (!have1)
+                    num1 = lastNum;
+                if (readLines(cp, num1 + 1))
+                    break;
+                if (fileName == NULL)
+                    fileName = xstrdup(cp);
+                break;
 
-		case 's':
-			subCommand(cp, num1, num2);
-			break;
+            case 's':
+                subCommand(cp, num1, num2);
+                break;
 
-		case 'w':
-			if (*cp != '\0' && *cp != ' ') {
-				bb_simple_error_msg("bad write command");
-				break;
-			}
-			cp = skip_whitespace(cp);
-			if (*cp == '\0') {
-				cp = fileName;
-				if (!cp) {
-					bb_simple_error_msg("no file name specified");
-					break;
-				}
-			}
-			if (!have1) {
-				num1 = 1;
-				num2 = lastNum;
-				dirty = FALSE;
-			}
-			writeLines(cp, num1, num2);
-			break;
+            case 'w':
+                if (*cp != '\0' && *cp != ' ') {
+                    bb_simple_error_msg("bad write command");
+                    break;
+                }
+                cp = skip_whitespace(cp);
+                if (*cp == '\0') {
+                    cp = fileName;
+                    if (!cp) {
+                        bb_simple_error_msg("no file name specified");
+                        break;
+                    }
+                }
+                if (!have1) {
+                    num1 = 1;
+                    num2 = lastNum;
+                    dirty = FALSE;
+                }
+                writeLines(cp, num1, num2);
+                break;
 
-		case 'z':
-			switch (*cp) {
-			case '-':
-				printLines(curNum - 21, curNum, FALSE, 0);
-				break;
-			case '.':
-				printLines(curNum - 11, curNum + 10, FALSE, 0);
-				break;
-			default:
-				printLines(curNum, curNum + 21, FALSE, 0);
-				break;
-			}
-			break;
+            case 'z':
+                switch (*cp) {
+                    case '-':
+                        printLines(curNum - 21, curNum, FALSE, 0);
+                        break;
+                    case '.':
+                        printLines(curNum - 11, curNum + 10, FALSE, 0);
+                        break;
+                    default:
+                        printLines(curNum, curNum + 21, FALSE, 0);
+                        break;
+                }
+                break;
 
-		case '.':
-			if (have1) {
-				bb_simple_error_msg("no arguments allowed");
-				break;
-			}
-			printLines(curNum, curNum, FALSE, 0);
-			break;
+            case '.':
+                if (have1) {
+                    bb_simple_error_msg("no arguments allowed");
+                    break;
+                }
+                printLines(curNum, curNum, FALSE, 0);
+                break;
 
-		case '-':
-			if (setCurNum(curNum - 1))
-				printLines(curNum, curNum, FALSE, 0);
-			break;
+            case '-':
+                if (setCurNum(curNum - 1))
+                    printLines(curNum, curNum, FALSE, 0);
+                break;
 
-		case '=':
-			printf("%d\n", num1);
-			break;
-		case '\0':
-			if (have1) {
-				printLines(num2, num2, FALSE, 0);
-				break;
-			}
-			if (setCurNum(curNum + 1))
-				printLines(curNum, curNum, FALSE, 0);
-			break;
+            case '=':
+                printf("%d\n", num1);
+                break;
+            case '\0':
+                if (have1) {
+                    printLines(num2, num2, FALSE, 0);
+                    break;
+                }
+                if (setCurNum(curNum + 1))
+                    printLines(curNum, curNum, FALSE, 0);
+                break;
 
-		default:
-			bb_simple_error_msg("unimplemented command");
-			break;
-		}
-	}
+            default:
+                bb_simple_error_msg("unimplemented command");
+                break;
+        }
+    }
 }
 
 int ed_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int ed_main(int argc UNUSED_PARAM, char **argv)
 {
-	INIT_G();
+    INIT_G();
 
-	bufSize = INITBUF_SIZE;
-	bufBase = xmalloc(bufSize);
-	bufPtr = bufBase;
-	lines.next = &lines;
-	lines.prev = &lines;
+    bufSize = INITBUF_SIZE;
+    bufBase = xmalloc(bufSize);
+    bufPtr = bufBase;
+    lines.next = &lines;
+    lines.prev = &lines;
 
-	prompt = ""; /* no prompt by default */
-	getopt32(argv, OPTION_STR, &prompt);
-	argv += optind;
+    prompt = ""; /* no prompt by default */
+    getopt32(argv, OPTION_STR, &prompt);
+    argv += optind;
 
-	if (argv[0]) {
-		fileName = xstrdup(argv[0]);
-		if (!readLines(fileName, 1)) {
-			return EXIT_SUCCESS;
-		}
-		dirty = FALSE;
-	}
+    if (argv[0]) {
+        fileName = xstrdup(argv[0]);
+        if (!readLines(fileName, 1)) {
+            return EXIT_SUCCESS;
+        }
+        dirty = FALSE;
+    }
 
-	doCommands();
-	return EXIT_SUCCESS;
+    doCommands();
+    return EXIT_SUCCESS;
 }
