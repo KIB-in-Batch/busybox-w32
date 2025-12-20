@@ -1,29 +1,15 @@
 ### Status
 
-Things may work for you, or may not.  Things may never work because of huge differences between Linux and Windows.  Or things may work in future, if you report the problem on [GitHub](https://github.com/rmyorston/busybox-w32) or [GitLab](https://gitlab.com/rmyorston/busybox-w32).  If you don't have an account on one of those or you'd prefer to communicate privately you can email [rmy@pobox.com](mailto:rmy@pobox.com).
-
-Additional information is available from the [BusyBox for Windows](https://frippery.org/busybox/index.html) web page.  In particular:
-
-- There are [downloads](https://frippery.org/busybox/index.html#downloads) of precompiled binaries for i686, x86_64 and aarch64.
-- Release notes for the [current](https://frippery.org/busybox/release-notes/current.html) and [previous](https://frippery.org/busybox/release-notes/index.html) releases are available.
+Things may work for you, or may not.  Things may never work because of huge differences between Linux and Windows.  Or things may work in future, if you report the problem on [GitHub](https://github.com/KIB-in-Batch/busybox-w32).  If you don't have an account on GitHub or you'd prefer to communicate privately you can email [benja2998@duck.com](mailto:benja2998@duck.com).
 
 ### Building
 
-You need a MinGW toolchain and a POSIX environment.  I cross-compile on Linux.  On Fedora the following should pull in everything required:
+You need Docker on whatever OS you use. Run `docker-compose up -d`, enter the container shell, and run the following commands:
 
-`dnf install gcc make ncurses-devel perl-Pod-Html`
-
-`dnf install mingw64-gcc` (for a 64-bit build)
-
-`dnf install mingw32-gcc` (for a 32-bit build)
-
-On Microsoft Windows you can install [w64devkit](https://github.com/skeeto/w64devkit/releases).  Get the `-i686` variant for a 32-bit build.  Unzip the file and run `w64devkit/w64devkit.exe`.
-
-On either Linux or Windows the commands `make mingw64_defconfig` or `make mingw32_defconfig` will pick up the default configuration.  You can then customize your build with `make menuconfig` or by editing `.config`, if you know what you're doing.
-
-Then just `make`.
-
-See the [Building busybox-w32](https://frippery.org/busybox/build.html) web page for additional information.
+```bash
+make kib64u_defconfig -j$(nproc)
+make -j$(nproc)
+```
 
 ### Hints
 
