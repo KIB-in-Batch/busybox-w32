@@ -1,7 +1,3 @@
-### Status
-
-Things may work for you, or may not.  Things may never work because of huge differences between Linux and Windows.  Or things may work in future, if you report the problem on [GitHub](https://github.com/KIB-in-Batch/busybox-w32).  If you don't have an account on GitHub or you'd prefer to communicate privately you can email [benja2998@duck.com](mailto:benja2998@duck.com).
-
 ### Building
 
 You need Docker on whatever OS you use. Run `docker-compose up -d`, enter the container shell, and run the following commands:
